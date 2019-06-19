@@ -143,19 +143,8 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 	if attr.FileType != u.Directory {
 		return
 	}
-	var buf u.UnifiedBuffer
-	buf.Init(BlockSize)
-	addr := attr.StartAddr
-
-	if addr == 0 {
-		return
-	} else {
-		for addr > 0 {
-			buf.Append(sb.getData(int(addr)))
-			addr = sb.getFat(addr)
-		}
-	}
-
+	var buf ExtendedBuffer
+	buf.Init(BlockSize,sb.ReadInode(int(attr.InodeNumber)).(*Ext0Inode))
 	size := attr.Size
 	if size%DirStorageSIze != 0 {
 		return
@@ -163,6 +152,7 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 	var dentryNumber = size / DirStorageSIze
 
 	block := buf.ReadAll()
+
 	for i := 0; i < int(dentryNumber); i++ {
 		var dirName [DirStorageSIze - 2]byte
 		var dirInodeNumber uint16
@@ -203,23 +193,17 @@ func (sb *Ext0SuperBlock) DestroyInode(num int) (ok bool) {
 	return true
 }
 func (sb *Ext0SuperBlock) initRootInode() {
-	var ino Ext0Inode
+	var ino = &Ext0Inode{}
 	ino.attr = sb.initAttr()
 	ino.attr.BlockCount = 0
 	ino.attr.FileType = u.Directory
 	ino.sb = sb
-	buf := u.UnifiedBuffer{}
-	addrArray := [4]int{}
-	buf.Init(BlockSize)
-	for i := 0; i < 4; i++ {
-		addrArray[i] = ino.allocBlock()
-	}
+	buf := ExtendedBuffer{}
 	num := uint16(0)
 	ino.attr.InodeNumber = num
-	buf.Append(ino.sb.getData(int(ino.attr.StartAddr)))
+	buf.Init(BlockSize,ino)
 	buf.WriteAt(0, makeDirData(".", 0))
 	buf.WriteAt(DirStorageSIze, makeDirData("..", 0))
-	ino.attr.Size += DirStorageSIze * 2
 	sb.setInodeBitmap(int(num), true)
 	sb.WriteInode(int(num), ino.attr)
 }

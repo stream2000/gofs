@@ -75,9 +75,9 @@ func (ino *Ext0Inode) List() bool {
 	} else {
 		dir := ino.sb.ReadDir(ino.attr)
 		for _, d := range dir {
-			//if getName(d.name) == "." || getName(d.name) == ".."{
-			//	continue
-			//}
+			if getName(d.name) == "." || getName(d.name) == ".."{
+				continue
+			}
 			fmt.Printf("%s ", getName(d.name))
 			//getName(d.name)
 		}
@@ -144,16 +144,12 @@ func (ino *Ext0Inode) initAsDir(parent uint16, sb *Ext0SuperBlock) uint16 {
 	ino.attr.BlockCount = 0
 	ino.attr.FileType = u.Directory
 	ino.sb = sb
-	buf := ExtendedBuffer{}
-	addrArray := [4]int{}
-	buf.Init(BlockSize,ino)
-	for i := 0; i < 4; i++ {
-		addrArray[i] = ino.allocBlock()
-	}
-	// a struct to store dir
 	num := sb.GetNextFreeInodeNumber()
 	ino.attr.InodeNumber = num
 	sb.setInodeBitmap(int(num), true)
+	buf := ExtendedBuffer{}
+	buf.Init(BlockSize,ino)
+	// a struct to store dir
 	buf.Write(makeDirData(".", ino.attr.InodeNumber))
 	buf.Write(makeDirData("..", parent))
 	sb.WriteInode(int(num), ino.attr)
@@ -184,19 +180,11 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 	if ino.LookUp(name) != 0 || attr.FileType != u.Directory {
 		return
 	}
-	var buf u.UnifiedBuffer
-	buf.Init(BlockSize)
-	addr := attr.StartAddr
-	if addr == 0 {
-		return
-	} else {
-		for addr > 0 {
-			buf.Append(sb.getData(int(addr)))
-			addr = sb.getFat(addr)
-		}
-	}
+	var buf ExtendedBuffer
+	buf.Init(BlockSize,ino)
 
 	size := attr.Size
+
 	if size%DirStorageSIze != 0 {
 		return
 	}
@@ -213,14 +201,35 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 		// 这是被删除的目录项，可以在这里创建新目录
 		if dirName[0] == 0 && dirInodeNumber == 0 {
 			buf.WriteAt(DirStorageSIze*i, makeDirData(name, num))
-			ino.attr.Size += DirStorageSIze
 			return
 		}
 	}
-	buf.CurrentSize = int(attr.Size)
 	buf.WriteAt(int(attr.Size), makeDirData(name, num))
-	ino.attr.Size += DirStorageSIze
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return
+}
+func (ino *Ext0Inode)Write(offset int,data []byte)int {
+	attr := ino.attr
+	sb := ino.sb
+	// 确保不会创建重名文件
+	if attr.FileType != u.OrdinaryFile {
+		return 0
+	}
+	var buf ExtendedBuffer
+	buf.Init(BlockSize,ino)
+	cnt := buf.WriteAt(offset,data)
+	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
+	return cnt
+}
+func (ino *Ext0Inode)ReadAll()(re []byte){
+	attr := ino.attr
+
+	// 确保不会创建重名文件
+	if attr.FileType != u.OrdinaryFile {
+		return
+	}
+	var buf ExtendedBuffer
+	buf.Init(BlockSize,ino)
+	return buf.ReadAll()
 
 }

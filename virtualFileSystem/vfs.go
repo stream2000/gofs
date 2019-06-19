@@ -22,6 +22,8 @@ type Inode interface {
 	SeAttr(data InodeAttr)
 	GetAttr() InodeAttr
 	List() bool
+	ReadAll()[]byte
+	Write(offset int,data []byte)int
 }
 type InodeAttr struct {
 	InodeNumber uint16
