@@ -5,16 +5,6 @@ import (
 	"fmt"
 	"strings"
 )
-
-//func (fs *fileSystem)ReadSuperBlock(){
-//
-//}
-//
-//func (fs *fileSystem)registerFileSystem(){
-//
-//
-//}
-// a simplest hash function
 func Hash(fsMagic int, inodeNum int) string {
 	return string(fsMagic*1<<20 + inodeNum)
 }

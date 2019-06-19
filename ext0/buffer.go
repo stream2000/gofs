@@ -50,7 +50,6 @@ func (b *ExtendedBuffer) Init(size int, ino *Ext0Inode) {
 		}
 	}
 }
-
 // write back all the data to the disk
 func (b *ExtendedBuffer) writeBackToDisk() {
 
@@ -83,7 +82,7 @@ func (b *ExtendedBuffer) Write(data []byte) int {
 	offset := b.CurrentSize % b.BlockSize
 
 	// get max block number,if it is 0, alloc one new block
-	blockNum := len(b.blockNumbers)-1
+	blockNum := len(b.blockNumbers) -1
 	if offset == 0 {
 		// we don't alloc blocks unless needed, now, it is time to alloc at least one  new block
 		b.allocNewBlock(1)
@@ -161,7 +160,7 @@ func (b *ExtendedBuffer) setDataInsideBlock(num int, offsetInBlock int, data []b
 // 答案很简单，就用和dd类似的办法，中间的全部填写为0
 // 要懂得复用代码
 // currentSize内包含的部分就用modify，不包含的部分就用Write，注意切割
-func (b *ExtendedBuffer) WriteAt(offset int, data []byte) {
+func (b *ExtendedBuffer) WriteAt(offset int, data []byte) int{
 	// 假设 offset = 1025 则 start = 1
 	endAddr := offset + len(data)
 	if endAddr < b.CurrentSize {
@@ -175,9 +174,9 @@ func (b *ExtendedBuffer) WriteAt(offset int, data []byte) {
 		b.modify(offset, data[:b.CurrentSize-offset])
 		b.Write(data[b.CurrentSize-offset:])
 	}
+	return len(data)
 }
-func (b ExtendedBuffer) ReadAll() []byte {
-	result := make([]byte, b.CurrentSize)
+func (b ExtendedBuffer) ReadAll()(result []byte ) {
 	for _, x := range b.Data {
 		result = append(result, x...)
 	}
