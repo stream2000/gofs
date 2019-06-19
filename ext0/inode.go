@@ -147,7 +147,7 @@ func (ino *Ext0Inode) initAsDir(parent uint16, sb *Ext0SuperBlock) uint16 {
 	num := sb.GetNextFreeInodeNumber()
 	ino.attr.InodeNumber = num
 	sb.setInodeBitmap(int(num), true)
-	buf := ExtendedBuffer{}
+	buf := unifiedBuffer{}
 	buf.Init(BlockSize,ino)
 	// a struct to store dir
 	buf.Write(makeDirData(".", ino.attr.InodeNumber))
@@ -171,8 +171,6 @@ func (newInode *Ext0Inode) initAsOrdinaryFile(sb *Ext0SuperBlock) uint16 {
 
 }
 
-// 4.5 byte = 4.5 * 8  bit = 36 bit
-// 从当前块中找出第一个dirname 为 0 的，编号
 func (ino *Ext0Inode) createChild(name string, num uint16) {
 	attr := ino.attr
 	sb := ino.sb
@@ -180,7 +178,7 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 	if ino.LookUp(name) != 0 || attr.FileType != u.Directory {
 		return
 	}
-	var buf ExtendedBuffer
+	var buf unifiedBuffer
 	buf.Init(BlockSize,ino)
 
 	size := attr.Size
@@ -208,14 +206,13 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return
 }
-func (ino *Ext0Inode)Write(offset int,data []byte)int {
+func (ino *Ext0Inode) WriteAt(offset int,data []byte)int {
 	attr := ino.attr
 	sb := ino.sb
-	// 确保不会创建重名文件
 	if attr.FileType != u.OrdinaryFile {
 		return 0
 	}
-	var buf ExtendedBuffer
+	var buf unifiedBuffer
 	buf.Init(BlockSize,ino)
 	cnt := buf.WriteAt(offset,data)
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
@@ -224,12 +221,23 @@ func (ino *Ext0Inode)Write(offset int,data []byte)int {
 func (ino *Ext0Inode)ReadAll()(re []byte){
 	attr := ino.attr
 
-	// 确保不会创建重名文件
 	if attr.FileType != u.OrdinaryFile {
 		return
 	}
-	var buf ExtendedBuffer
+	var buf unifiedBuffer
 	buf.Init(BlockSize,ino)
 	return buf.ReadAll()
 
+}
+func (ino *Ext0Inode)Append(data []byte)int{
+	attr := ino.attr
+	sb := ino.sb
+	if attr.FileType != u.OrdinaryFile {
+		return 0
+	}
+	var buf unifiedBuffer
+	buf.Init(BlockSize,ino)
+	cnt := buf.Write(data)
+	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
+	return cnt
 }

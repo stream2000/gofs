@@ -23,7 +23,8 @@ type Inode interface {
 	GetAttr() InodeAttr
 	List() bool
 	ReadAll()[]byte
-	Write(offset int,data []byte)int
+	WriteAt(offset int,data []byte)int
+	Append(data []byte)int
 }
 type InodeAttr struct {
 	InodeNumber uint16

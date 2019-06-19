@@ -143,7 +143,7 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 	if attr.FileType != u.Directory {
 		return
 	}
-	var buf ExtendedBuffer
+	var buf unifiedBuffer
 	buf.Init(BlockSize,sb.ReadInode(int(attr.InodeNumber)).(*Ext0Inode))
 	size := attr.Size
 	if size%DirStorageSIze != 0 {
@@ -198,7 +198,7 @@ func (sb *Ext0SuperBlock) initRootInode() {
 	ino.attr.BlockCount = 0
 	ino.attr.FileType = u.Directory
 	ino.sb = sb
-	buf := ExtendedBuffer{}
+	buf := unifiedBuffer{}
 	num := uint16(0)
 	ino.attr.InodeNumber = num
 	buf.Init(BlockSize,ino)
