@@ -25,7 +25,7 @@ var getTests = []struct {
 }
 
 func TestSet(t *testing.T) {
-	var cache cache
+	var cache Cache
 	cache = NewMemCache(0)
 	values := []string{"test1", "test2", "test3"}
 	key := "key1"
@@ -42,14 +42,14 @@ func TestSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	var cache cache
+	var cache Cache
 	cache = NewMemCache(0)
 	for _, tt := range getTests {
 		cache.Set(tt.keyToAdd, 1234)
 		val, ok := cache.Get(tt.keyToGet)
 
 		if ok != tt.expectedOk {
-			t.Fatalf("%s: val:%v cache hit = %v; want %v", tt.name, val, ok, !ok)
+			t.Fatalf("%s: val:%v Cache hit = %v; want %v", tt.name, val, ok, !ok)
 		} else if ok && val != 1234 {
 			t.Fatalf("%s expected get to return 1234 but got %v", tt.name, val)
 		}
@@ -58,7 +58,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	var cache cache
+	var cache Cache
 	cache = NewMemCache(0)
 	cache.Set("myKey", 1234)
 	if val, ok := cache.Get("myKey"); !ok {
@@ -82,7 +82,7 @@ func TestStatus(t *testing.T) {
 	var maxSize int
 	var currentSize int
 	maxSize = 20
-	var cache cache
+	var cache Cache
 	cache = NewMemCache(maxSize)
 	//keys := []string{"1", "2", "3", "4", "5"}
 	for _, key := range keys {
@@ -112,7 +112,7 @@ func TestStatus(t *testing.T) {
 func TestLRU(t *testing.T) {
 	keys := []string{"1", "2", "3", "4", "2", "1", "3", "5", "6", "5", "6"}
 	maxSize := 3
-	var cache cache
+	var cache Cache
 	cache = NewMemCache(maxSize)
 	for i, key := range keys {
 		cache.Set(key, 1234)

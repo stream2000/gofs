@@ -21,10 +21,10 @@ type Inode interface {
 	LookUp(name string) int
 	SeAttr(data InodeAttr)
 	GetAttr() InodeAttr
-	List() bool
-	ReadAll()[]byte
-	WriteAt(offset int,data []byte)int
-	Append(data []byte)int
+	List()([]string,bool)
+	ReadAll() []byte
+	WriteAt(offset int, data []byte) int
+	Append(data []byte) int
 }
 type InodeAttr struct {
 	InodeNumber uint16
@@ -70,8 +70,7 @@ type inodeHash struct {
 type Vfs struct {
 	rootVnode vfsInode
 	//rootDentry Dentry
-	inodeCache     cache.MemCache
-	dentryCache    cache.MemCache
+	inodeCache     cache.Cache
 	rootSb         SuperBlock
 	mountPointList []Path
 	mount          []vfsMount

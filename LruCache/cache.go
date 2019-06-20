@@ -1,6 +1,6 @@
 package cache
 
-//return status of cache
+//return status of Cache
 type cacheStatus struct {
 	Gets        int64
 	Hits        int64
@@ -9,7 +9,7 @@ type cacheStatus struct {
 }
 
 //this is an interface which defines some common functions
-type cache interface {
+type Cache interface {
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 	Delete(key string)

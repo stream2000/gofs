@@ -1,28 +1,32 @@
 package virtualFileSystem
 
 import (
+	cache "../LruCache"
 	u "../utilities"
 	"fmt"
+	"strconv"
 	"strings"
 )
+
 func Hash(fsMagic int, inodeNum int) string {
-	return string(fsMagic*1<<20 + inodeNum)
+	return strconv.Itoa(fsMagic)+"|"+strconv.Itoa(inodeNum)
 }
 
-func (v Vfs) parsePathName(name string) (p Path) {
-	p.pathSlice = strings.Split(name, "/")[1:]
+func (v Vfs) initPath(path string) (p Path) {
+	path = v.parseRelativePath(path)
+	p.pathSlice = strings.Split(path, "/")[1:]
 	p.depth = len(p.pathSlice)
 	p.currentIndex = 0
-	p.pathString = name
+	p.pathString = path
 	return
 }
 
 func (v Vfs) isMountPoint(p string) bool {
-	for _, x := range v.mountPointList {
-		if p == x.pathString {
-			return true
-		}
-	}
+	//for _, x := range v.mountPointList {
+	//	if p == x.pathString {
+	//		return true
+	//	}
+	//}
 	return false
 }
 
@@ -33,109 +37,29 @@ func (v *Vfs) Init(sb SuperBlock) {
 	v.rootSb = sb
 
 	sb.Init()
-	//v.rootVnode.inode = sb.ReadInode(0)
-	//v.rootVnode.sb = sb
-	//v.rootVnode.data = v.rootVnode.inode.GetAttr()
+
 	v.rootVnode.inode = sb.GetRoot()
 	v.rootVnode.sb = sb
-	v.curDir = v.parsePathName("/")
-	v.mountPointList = append(v.mountPointList, v.parsePathName("/"))
+	v.curDir = v.initPath("/")
+	v.mountPointList = append(v.mountPointList, v.initPath("/"))
+	v.mount = append(v.mount, vfsMount{mountPoint:v.mountPointList[0],sb:sb,order:0})
+	v.inodeCache = cache.NewMemCache(30)
 }
 
 func (v Vfs) Pwd() {
 	fmt.Println(v.curDir.pathString)
 }
-
-func (v Vfs) GetInodeByPath(path string) (ino Inode, ok bool) {
-	root := v.rootVnode
-	if path == "/" {
-		return root.inode, true
-	}
-	p := v.parsePathName(path)
-	if p.depth < 1 {
-		return ino, false
-	}
-	ino = root.inode
-	curSb := v.rootSb
-	for _, x := range p.pathSlice {
-		num := ino.LookUp(x)
-		if num == 0 {
-			fmt.Println("错误，没有找到 ", x)
-			return ino, false
-		} else {
-			ino = curSb.ReadInode(num)
-		}
-
-	}
-	return ino, true
+func (v Vfs)GetCur()string{
+	return v.curDir.pathString
 }
+func (v Vfs) getInodeByPath(path string)(ino Inode,ok bool){
+	if path == "/"{
+		v.curDir = v.initPath(path)
+		return v.rootVnode.inode,true
+	}
 
-// 工作目录必须是有效的
-func (v *Vfs) ChangeDir(path string) {
-	ino, ok := v.GetInodeByPath(path)
-	if ok {
-		if ino.GetAttr().FileType != u.Directory {
-			fmt.Println("这不是一个目录！")
-		} else {
-			v.curDir = v.parsePathName(path)
-		}
-	} else {
-		fmt.Println("不存在这样的目录")
-	}
-}
-func (v Vfs) Ls() {
-	ino, ok := v.GetInodeByPath(v.curDir.pathString)
-	if ok {
-		if ino.GetAttr().FileType != u.Directory {
-			fmt.Println("错误！当前项不是一个目录！")
-		} else {
-			ino.List()
-		}
-	} else {
-		fmt.Println("当前目录不存在")
-	}
-}
-func (v *Vfs) Touch(name string) {
-	root := v.rootVnode
-	p := v.parsePathName(name)
-	if p.depth < 1 {
-		return
-	}
-	curInode := root.inode
-	curSb := v.rootSb
-	for _, x := range p.pathSlice[:p.depth-1] {
-		num := curInode.LookUp(x)
-		if num == 0 {
-			curSb.CreateFile(x, curInode, 2)
-			num := curInode.LookUp(x)
-			if num > 0 {
-				curInode = curSb.ReadInode(num)
-			}
-		} else {
-
-		}
-	}
-	curSb.CreateFile(p.pathSlice[p.depth-1], curInode, 1)
-}
-func (p Path) GetPart(depth int) (name string) {
-	name += "/"
-	for i, x := range p.pathSlice {
-		if i < depth {
-			name += x
-		} else {
-			return
-		}
-	}
-	return
-}
-
-func (v Vfs) Open(name string) {
-	//
-	//d,flag := v.inodeCache.Get("123")
-	//if flag{
-	//	d.(Inode).LookUp("mnt")
-	//}
-	p := v.parsePathName(name)
+	p := v.initPath(path)
+	path = p.pathString
 
 	curInode := v.rootVnode
 	curMnt := v.mount[0]
@@ -143,13 +67,14 @@ func (v Vfs) Open(name string) {
 
 	for _, x := range p.pathSlice {
 		curDir += x
+		// FIXME mount
 		if v.isMountPoint(curDir) {
 
 		} else {
 			newInodeNum := curInode.inode.LookUp(x)
 
 			if newInodeNum > 0 {
-				hashValueOfCurInode := Hash(curMnt.order, newInodeNum)
+				hashValueOfCurInode := Hash(0, newInodeNum)
 				// 从缓存中搜索inode
 				cachedInode, flag := v.inodeCache.Get(hashValueOfCurInode)
 				if flag {
@@ -167,9 +92,162 @@ func (v Vfs) Open(name string) {
 					}
 				}
 			} else { // 并没有这样的目录项
-				return
+
+				return ino,false
 			}
 		}
 	}
+	return curInode.inode,true
+}
+// 工作目录必须是有效的
+func (v *Vfs) ChangeDir(path string) {
 
+	p := v.initPath(path)
+	path = p.pathString
+	ino, ok := v.getInodeByPath(path)
+	if ok {
+		if ino.GetAttr().FileType != u.Directory {
+			fmt.Println("这不是一个目录！")
+		} else {
+			v.curDir = v.initPath(path)
+		}
+	} else {
+		fmt.Println("不存在这样的目录")
+	}
+}
+func (v Vfs) GetFileListInCurrentDir()(list []string,ok bool){
+	ino, ok := v.getInodeByPath(v.curDir.pathString)
+	if ok {
+		if ino.GetAttr().FileType != u.Directory {
+			fmt.Println("错误！当前项不是一个目录！")
+		} else {
+			list,ok := ino.List()
+			if ok{
+				return list,true
+			}
+		}
+	} else {
+		fmt.Println("当前目录不存在")
+	}
+	return
+}
+
+func (v Vfs) ListCurrentDir() {
+	ino, ok := v.getInodeByPath(v.curDir.pathString)
+	var re string
+	if ok {
+		if ino.GetAttr().FileType != u.Directory {
+			fmt.Println("错误！当前项不是一个目录！")
+		} else {
+			list,ok := ino.List()
+			if ok{
+				for _,x  := range list{
+					re += x+" "
+				}
+				fmt.Println(re)
+			}
+		}
+	} else {
+		fmt.Println("当前目录不存在")
+	}
+}
+func (v *Vfs)ListDir(path string){
+	ino,ok := v.getInodeByPath(path)
+
+	if ok{
+		fmt.Println(ino.GetAttr())
+	}else {
+		_ = fmt.Errorf("stat error: path %s not found",path)
+	}
+}
+func (v Vfs)Stat(path string){
+	ino,ok := v.getInodeByPath(path)
+
+	if ok{
+		fmt.Println(ino.GetAttr())
+	}else {
+		_ = fmt.Errorf("stat error: path %s not found",path)
+	}
+}
+func (v *Vfs) Touch(path string) {
+	p := v.initPath(path)
+	path = p.pathString
+	if p.depth < 1 {
+		return
+	}
+	parentPath,childName := p.splitParentAndChild()
+	flag: parentInode,ok := v.getInodeByPath(parentPath)
+	if ok{
+		v.rootSb.CreateFile(childName, parentInode, 1)
+	}else {
+		v.createParentDir(parentPath)
+		goto flag
+	}
+
+}
+func(v *Vfs) MakeDir(path string){
+	p := v.initPath(path)
+	path = p.pathString
+	if p.depth < 1 {
+		return
+	}
+	parentPath,childName := p.splitParentAndChild()
+
+	flag: parentInode,ok := v.getInodeByPath(parentPath)
+	if ok{
+		if parentInode.GetAttr().FileType != u.Directory{
+			fmt.Println("mkdir error: ","path: ",parentPath," is not a directory")
+			return
+		}
+		v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
+	}else {
+		v.createParentDir(parentPath)
+		goto flag
+	}
+}
+func (p Path)splitParentAndChild()(parent string,child string){
+
+	if p.depth == 1{
+		return "/",p.pathSlice[0]
+	}
+	parent = "/"
+	for _, x := range p.pathSlice[:p.depth-1] {
+		parent += x
+	}
+	child = p.pathSlice[p.depth-1]
+	return
+}
+
+func (v Vfs)parseRelativePath(path string)string{
+	if  !strings.HasPrefix(path,"/"){
+		// 说明要解析的是相对路径
+		if v.curDir.pathString == "/"{
+			path = "/" + path
+		}else {
+			path = v.curDir.pathString + "/" + path
+		}
+	}
+	return path
+}
+func (v *Vfs) createParentDir(path string){
+	root := v.rootVnode
+	p := v.initPath(path)
+	path = p.pathString
+	if p.depth < 1 {
+		return
+	}
+	curInode := root.inode
+	curSb := v.rootSb
+	for _, x := range p.pathSlice {
+		num := curInode.LookUp(x)
+		if num == 0 {
+			curSb.CreateFile(x, curInode, 2)
+			num := curInode.LookUp(x)
+			if num > 0 {
+				curInode = curSb.ReadInode(num)
+			}
+		} else {
+
+		}
+	}
 }

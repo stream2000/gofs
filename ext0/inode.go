@@ -3,7 +3,6 @@ package ext0
 import (
 	vfs "../virtualFileSystem"
 	"encoding/binary"
-	"fmt"
 )
 import u "../utilities"
 
@@ -69,22 +68,22 @@ func (ino *Ext0Inode) LookUp(name string) int {
 	}
 	return 0
 }
-func (ino *Ext0Inode) List() bool {
+func (ino *Ext0Inode) List() (dirList []string,ok bool) {
+
 	if ino.attr.FileType != u.Directory {
-		return false
+		return
 	} else {
 		dir := ino.sb.ReadDir(ino.attr)
 		for _, d := range dir {
-			if getName(d.name) == "." || getName(d.name) == ".."{
+			if getName(d.name) == "." || getName(d.name) == ".." {
 				continue
 			}
-			fmt.Printf("%s ", getName(d.name))
+			dirList = append(dirList, getName(d.name))
 			//getName(d.name)
 		}
 
 	}
-	fmt.Println()
-	return true
+	return dirList,true
 }
 func (ino *Ext0Inode) Link() {
 
@@ -98,9 +97,11 @@ func (ino *Ext0Inode) SeAttr(attr vfs.InodeAttr) {
 func (ino *Ext0Inode) GetAttr() vfs.InodeAttr {
 	return ino.attr
 }
+
 // modify the blockCount attr, causing inconsistency
 func (ino *Ext0Inode) allocBlock() int {
 	num := ino.sb.GetNextFreeBlockeNumber()
+	ino.sb.FreeBlockNumber += 1
 	if ino.attr.StartAddr == 0 {
 		ino.attr.StartAddr = num
 		ino.sb.setBlockBitmap(int(ino.attr.StartAddr), true)
@@ -148,7 +149,7 @@ func (ino *Ext0Inode) initAsDir(parent uint16, sb *Ext0SuperBlock) uint16 {
 	ino.attr.InodeNumber = num
 	sb.setInodeBitmap(int(num), true)
 	buf := unifiedBuffer{}
-	buf.Init(BlockSize,ino)
+	buf.Init(BlockSize, ino)
 	// a struct to store dir
 	buf.Write(makeDirData(".", ino.attr.InodeNumber))
 	buf.Write(makeDirData("..", parent))
@@ -179,7 +180,7 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 		return
 	}
 	var buf unifiedBuffer
-	buf.Init(BlockSize,ino)
+	buf.Init(BlockSize, ino)
 
 	size := attr.Size
 
@@ -206,38 +207,43 @@ func (ino *Ext0Inode) createChild(name string, num uint16) {
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return
 }
-func (ino *Ext0Inode) WriteAt(offset int,data []byte)int {
+func (ino *Ext0Inode) WriteAt(offset int, data []byte) int {
 	attr := ino.attr
 	sb := ino.sb
 	if attr.FileType != u.OrdinaryFile {
 		return 0
 	}
 	var buf unifiedBuffer
-	buf.Init(BlockSize,ino)
-	cnt := buf.WriteAt(offset,data)
+	buf.Init(BlockSize, ino)
+	cnt := buf.WriteAt(offset, data)
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return cnt
 }
-func (ino *Ext0Inode)ReadAll()(re []byte){
+func (ino *Ext0Inode) ReadAll() (re []byte) {
 	attr := ino.attr
 
 	if attr.FileType != u.OrdinaryFile {
 		return
 	}
 	var buf unifiedBuffer
-	buf.Init(BlockSize,ino)
+	buf.Init(BlockSize, ino)
 	return buf.ReadAll()
 
 }
-func (ino *Ext0Inode)Append(data []byte)int{
+func (ino *Ext0Inode) Append(data []byte) int {
 	attr := ino.attr
 	sb := ino.sb
 	if attr.FileType != u.OrdinaryFile {
 		return 0
 	}
 	var buf unifiedBuffer
-	buf.Init(BlockSize,ino)
+	buf.Init(BlockSize, ino)
 	cnt := buf.Write(data)
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return cnt
+}
+func (ino *Ext0Inode) Resize(newSize int) {
+	buf := unifiedBuffer{}
+	buf.Init(BlockSize, ino)
+	buf.resize(newSize)
 }

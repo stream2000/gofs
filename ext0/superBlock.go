@@ -144,7 +144,7 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 		return
 	}
 	var buf unifiedBuffer
-	buf.Init(BlockSize,sb.ReadInode(int(attr.InodeNumber)).(*Ext0Inode))
+	buf.Init(BlockSize, sb.ReadInode(int(attr.InodeNumber)).(*Ext0Inode))
 	size := attr.Size
 	if size%DirStorageSIze != 0 {
 		return
@@ -174,22 +174,15 @@ func (sb Ext0SuperBlock) GetRoot() vfs.Inode {
 }
 func (sb *Ext0SuperBlock) DestroyInode(num int) (ok bool) {
 	ino := sb.ReadInode(num)
-	data := ino.GetAttr()
-	addr := data.StartAddr
 	//var emptyByte byte
 	// 当硬链接数大于1时无法删除
-	if addr == 0 || ino.GetAttr().LinkCount > 1 {
+	if ino.GetAttr().LinkCount > 1 {
 		return false
-	} else {
-		for addr > 0 {
-			// 先释放数据区
-			sb.freeBlock(int(addr))
-			// 再释放Fat，取得下一个数据块
-			addr = sb.freeFat(addr)
-			sb.FreeBlockNumber++
-		}
 	}
+	//释放数据
+	ino.(*Ext0Inode).Resize(0)
 	//	最后释放inode以及他的位图
+	sb.freeInode(num)
 	return true
 }
 func (sb *Ext0SuperBlock) initRootInode() {
@@ -201,7 +194,7 @@ func (sb *Ext0SuperBlock) initRootInode() {
 	buf := unifiedBuffer{}
 	num := uint16(0)
 	ino.attr.InodeNumber = num
-	buf.Init(BlockSize,ino)
+	buf.Init(BlockSize, ino)
 	buf.WriteAt(0, makeDirData(".", 0))
 	buf.WriteAt(DirStorageSIze, makeDirData("..", 0))
 	sb.setInodeBitmap(int(num), true)

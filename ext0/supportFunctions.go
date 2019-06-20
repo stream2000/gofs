@@ -123,6 +123,12 @@ func (sb *Ext0SuperBlock) WriteInode(number int, attr vfs.InodeAttr) {
 	binary.BigEndian.PutUint16(inodeSlice[28:30], attr.FileType)
 	binary.BigEndian.PutUint16(inodeSlice[30:32], attr.StartAddr)
 }
+func (sb *Ext0SuperBlock) freeInode(number int) {
+	sb.setInodeBitmap(number, false)
+	var empty byte
+	inodeSlice := sb.disk.UnsaveRead(InodeStartAddr+InodeSize*number, InodeStartAddr+InodeSize*(number+1))
+	memsetRepeat(inodeSlice, empty)
+}
 
 /* ***********************************DataBlock***********************************  */
 

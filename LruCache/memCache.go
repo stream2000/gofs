@@ -10,7 +10,7 @@ import (
 // An atomicInt is an int64 to be accessed atomically.
 type atomicInt int64
 
-// MemCache is an LRU cache. It is safe for concurrent access.
+// MemCache is an LRU Cache. It is safe for concurrent access.
 type MemCache struct {
 	mutex       sync.RWMutex
 	maxItemSize int
@@ -24,8 +24,8 @@ type entry struct {
 	value interface{}
 }
 
-//NewMemCache If maxItemSize is zero, the cache has no limit.
-//if maxItemSize is not zero, when cache's size beyond maxItemSize,start to swap
+//NewMemCache If maxItemSize is zero, the Cache has no limit.
+//if maxItemSize is not zero, when Cache's size beyond maxItemSize,start to swap
 func NewMemCache(maxItemSize int) *MemCache {
 	return &MemCache{
 		maxItemSize: maxItemSize,
@@ -34,7 +34,7 @@ func NewMemCache(maxItemSize int) *MemCache {
 	}
 }
 
-//Status return the status of cache
+//Status return the status of Cache
 func (c *MemCache) Status() *cacheStatus {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()

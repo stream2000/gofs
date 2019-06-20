@@ -7,7 +7,6 @@ import (
 	"github.com/abiosoft/ishell"
 
 	"github.com/fatih/color"
-	"strconv"
 )
 
 func main() {
@@ -17,82 +16,92 @@ func main() {
 	sb = &ext0.Ext0SuperBlock{}
 	var v virtualFileSystem.Vfs
 	v.Init(sb)
-	var words  = []string{"fuqijun@My-Arch-Linux in /usr/bin","qwqw"}
-	var count int
-	blue := color.New(color.FgHiRed).SprintFunc()
-	var msg =[3]string{"fuqijun", "My-Arch-Linux","/usr/bin"}
 
-	//v.Touch("/mnt/win/go.test")
-	//v.Touch("/bin")
-	//v.Touch("/var")
-	//v.ChangeDir("/mnt/win")
-	//v.Pwd()
-	//v.Ls()
-	//v.ChangeDir("/")
-	//v.Ls()
 	shell := ishell.New()
-	shell.SetPrompt(blue("$ "))
+	red := color.New(color.FgHiRed).SprintFunc()
+	shell.SetPrompt(red("$ "))
 	// display welcome info.
-	printMessage(msg)
-	// register a function for "greet" command.
+	var promptMsg = [3]string{"fuqijun", "My-Arch-Linux", "/"}
+	printMessage(promptMsg)
+
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ls",
 		Help: "list",
 		Func: func(c *ishell.Context) {
-			v.Ls()
-			printMessage(msg)
+			v.ListCurrentDir()
+			printMessage(promptMsg)
 		},
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "cd",
-		Help: "list",
-
+		Help: "change work directory",
+		Completer: func([]string) []string {
+			dir,_ := v.GetFileListInCurrentDir()
+			return dir
+		},
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				v.ChangeDir("/")
 			} else {
 				v.ChangeDir(c.Args[0])
 			}
-			printMessage(msg)
+			promptMsg[2] = v.GetCur()
+			printMessage(promptMsg)
 		},
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "pwd",
-		Help: "list",
+		Help: "print work directory",
 		Func: func(c *ishell.Context) {
 			v.Pwd()
-			printMessage(msg)
+			printMessage(promptMsg)
 		},
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "touch",
 		Help: "list",
 		Func: func(c *ishell.Context) {
-			v.Touch(c.Args[0])
-			printMessage(msg)
+
+			if len(c.Args) == 0 {
+				_ = fmt.Errorf("Touch error: you must input the name")
+			} else {
+				v.Touch(c.Args[0])
+			}
+			printMessage(promptMsg)
 		},
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "test",
+		Name: "mkdir",
 		Help: "list",
-		Completer: func([]string) []string {
-			return words
-		},
 		Func: func(c *ishell.Context) {
-			count += 1
-			var s string
-			s += "test" + strconv.Itoa(count)
-			words = append(words, s)
-			printMessage(msg)
+			if len(c.Args) == 0 {
+				_ = fmt.Errorf("mkdir error: you must input the name")
+			} else {
+				v.MakeDir(c.Args[0])
+			}
+			printMessage(promptMsg)
+		},
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "stat",
+		Help: "view the information of file",
+		Func: func(c *ishell.Context) {
+			if len(c.Args) == 0 {
+				_ = fmt.Errorf("stat error: you must input the name")
+			} else {
+				v.Stat(c.Args[0])
+			}
+			printMessage(promptMsg)
 		},
 	})
 	// run shell
 	shell.Run()
 }
-func printMessage(s [3]string){
+func printMessage(s [3]string) {
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgHiYellow).SprintFunc()
 	blue := color.New(color.FgHiCyan).SprintFunc()
 	nBlule := color.New(color.FgHiBlue).SprintFunc()
-	fmt.Printf("%s %s @ %s in %s\n",nBlule("#"),blue(s[0]),green(s[1]),yellow(s[2]))
+	fmt.Printf("%s %s @ %s in %s\n", nBlule("#"), blue(s[0]), green(s[1]), yellow(s[2]))
 }
