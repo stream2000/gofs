@@ -3,6 +3,7 @@ package ext0
 import (
 	vfs "../virtualFileSystem"
 	"encoding/binary"
+	"fmt"
 )
 import u "../utilities"
 
@@ -59,7 +60,6 @@ func getName(b [DirStorageSIze - 2]byte) string {
 }
 func (ino *Ext0Inode) LookUp(name string) int {
 	dir := ino.sb.ReadDir(ino.attr)
-
 	for _, d := range dir {
 
 		if compareDirName(name, d.name) {
@@ -68,7 +68,7 @@ func (ino *Ext0Inode) LookUp(name string) int {
 	}
 	return 0
 }
-func (ino *Ext0Inode) List() (dirList []string,ok bool) {
+func (ino *Ext0Inode) List() (dirList []string, ok bool) {
 
 	if ino.attr.FileType != u.Directory {
 		return
@@ -83,7 +83,7 @@ func (ino *Ext0Inode) List() (dirList []string,ok bool) {
 		}
 
 	}
-	return dirList,true
+	return dirList, true
 }
 func (ino *Ext0Inode) Link() {
 
@@ -246,4 +246,46 @@ func (ino *Ext0Inode) Resize(newSize int) {
 	buf := unifiedBuffer{}
 	buf.Init(BlockSize, ino)
 	buf.resize(newSize)
+}
+func (ino *Ext0Inode) Remove(name string) (ok bool) {
+
+	childNum := ino.LookUp(name)
+
+	if childNum == 0 {
+		fmt.Println("can't find child with name ",name)
+	}
+	dir := ino.sb.ReadDir(ino.attr)
+
+	var buf unifiedBuffer
+	buf.Init(BlockSize, ino)
+	emptyByte := make([]byte, DirStorageSIze)
+
+	for i, d := range dir {
+
+		if d.inodeNumber == uint16(childNum){
+
+			// 找到这个inode,将它在目录中的存储清空
+
+			// 从inode表读取inode信息
+			cino := ino.sb.ReadInode(int(childNum))
+			if cino.GetAttr().FileType == u.OrdinaryFile {
+				// 普通文件，前往超级块删除inode信息和数据信息
+				ino.sb.destroyInode(cino.(*Ext0Inode))
+				buf.WriteAt(i*DirStorageSIze, emptyByte)
+				return true
+			} else {
+				ino.sb.destroyDir(cino.(*Ext0Inode))
+				buf.WriteAt(i*DirStorageSIze, emptyByte)
+				return true
+			}
+		}
+	}
+
+	return
+}
+func (ino *Ext0Inode)SetSb(sb vfs.SuperBlock){
+	ino.sb = sb.(*Ext0SuperBlock)
+}
+func (ino *Ext0Inode)GetSb()vfs.SuperBlock{
+	return ino.sb
 }

@@ -5,6 +5,7 @@ import (
 	u "../utilities"
 	vfs "../virtualFileSystem"
 	"encoding/binary"
+	"fmt"
 	"time"
 )
 
@@ -42,7 +43,7 @@ type Ext0SuperBlock struct {
 // 删除一个inode 分两步 先删除文件数据再删除inode数据 首先找到i节点对应的数据区域块，将他们对应的位图全部清0，修改空闲区域
 // startAddr 使用在fat和block表里的数据
 
-func (sb Ext0SuperBlock) GetFileSystemType() int {
+func (sb *Ext0SuperBlock) GetFileSystemType() int {
 	return u.Ext0
 }
 func (sb *Ext0SuperBlock) NewSuperBlock() {
@@ -77,18 +78,20 @@ func (sb *Ext0SuperBlock) Init() {
 }
 func (sb *Ext0SuperBlock) CreateFile(name string, p vfs.Inode, fileType int) (n vfs.Inode) {
 	var ino Ext0Inode
+	var num uint16
 	if fileType == int(u.OrdinaryFile) {
-		num := ino.initAsOrdinaryFile(sb)
+		num = ino.initAsOrdinaryFile(sb)
 		p.(*Ext0Inode).createChild(name, num)
 	} else if fileType == int(u.Directory) {
 		// 这会为ino分配磁盘空间并初始化一些属性最后写入磁盘
-		num := ino.initAsDir(p.GetAttr().InodeNumber, sb)
+		num = ino.initAsDir(p.GetAttr().InodeNumber, sb)
 		// 将新ino的信息写到父目录的信息区中
 		p.(*Ext0Inode).createChild(name, num)
 	}
+
 	return
 }
-func (sb Ext0SuperBlock) initAttr() (attr vfs.InodeAttr) {
+func (sb *Ext0SuperBlock) initAttr() (attr vfs.InodeAttr) {
 	attr = vfs.InodeAttr{
 		LinkCount: 1,
 		Ctime:     uint32(time.Now().Unix()),
@@ -169,21 +172,52 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 	}
 	return
 }
-func (sb Ext0SuperBlock) GetRoot() vfs.Inode {
+func (sb *Ext0SuperBlock) GetRoot() vfs.Inode {
 	return sb.ReadInode(0)
 }
-func (sb *Ext0SuperBlock) DestroyInode(num int) (ok bool) {
-	ino := sb.ReadInode(num)
-	//var emptyByte byte
+func (sb *Ext0SuperBlock) destroyInode(ino *Ext0Inode) (ok bool) {
 	// 当硬链接数大于1时无法删除
-	if ino.GetAttr().LinkCount > 1 {
-		return false
-	}
+	//if ino.GetAttr().LinkCount > 1 {
+	//	return false
+	//}
 	//释放数据
-	ino.(*Ext0Inode).Resize(0)
+	ino.Resize(0)
 	//	最后释放inode以及他的位图
-	sb.freeInode(num)
+	sb.freeInode(int(ino.attr.InodeNumber))
+
 	return true
+}
+func (sb *Ext0SuperBlock) destroyDir(ino *Ext0Inode) (ok bool) {
+	dirs := sb.ReadDir(ino.attr)
+	defer func() {
+		ino.Resize(0)
+		//	最后释放inode以及他的位图
+		sb.freeInode(int(ino.attr.InodeNumber))
+	}()
+	if len(dirs) == 2 {
+		sb.freeInode(int(ino.attr.InodeNumber))
+		ino.Resize(0)
+		return true
+	}
+	if ino.attr.FileType != u.Directory {
+		fmt.Println("not dir")
+		return
+	}
+	for _, d := range dirs {
+		if getName(d.name) == "." || getName(d.name) == ".." {
+			continue
+		}
+		cino := sb.ReadInode(int(d.inodeNumber))
+		if cino.GetAttr().FileType == u.OrdinaryFile {
+			// 普通文件，前往超级块删除inode信息和数据信息
+			ino.Remove(getName(d.name))
+			return true
+		} else {
+			return sb.destroyDir(cino.(*Ext0Inode))
+		}
+	}
+
+	return
 }
 func (sb *Ext0SuperBlock) initRootInode() {
 	var ino = &Ext0Inode{}

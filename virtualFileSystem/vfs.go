@@ -8,7 +8,7 @@ type SuperBlock interface {
 	NewSuperBlock()
 	ReadInode(number int) Inode            // when create an vInode,read it from disk
 	WriteInode(number int, data InodeAttr) // write an vInode to disk
-	DestroyInode(num int) bool             // when there is no refference to an vInode, call this function to drop an vInode in memory
+	//DestroyInode(num int) bool             // when there is no refference to an vInode, call this function to drop an vInode in memory
 	RecoverFromDisk()
 	Init()
 	GetRoot() Inode
@@ -21,10 +21,13 @@ type Inode interface {
 	LookUp(name string) int
 	SeAttr(data InodeAttr)
 	GetAttr() InodeAttr
-	List()([]string,bool)
+	List() ([]string, bool)
 	ReadAll() []byte
 	WriteAt(offset int, data []byte) int
 	Append(data []byte) int
+	Remove(name string) bool
+	GetSb()SuperBlock
+	SetSb(block SuperBlock)
 }
 type InodeAttr struct {
 	InodeNumber uint16

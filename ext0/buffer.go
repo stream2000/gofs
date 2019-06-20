@@ -132,8 +132,15 @@ func (b *unifiedBuffer) modify(offset int, data []byte) {
 		blockAddr := offset / b.BlockSize
 
 		currentOffset := 0
-		b.setDataInsideBlock(blockAddr, offset%b.BlockSize, data[:b.BlockSize-offset%b.BlockSize])
-		currentOffset += b.BlockSize - offset%b.BlockSize
+
+		offSetInsideBlock := offset % b.BlockSize
+		if offSetInsideBlock+len(data) <= b.BlockSize {
+			b.setDataInsideBlock(blockAddr, offset%b.BlockSize, data)
+			return
+		} else {
+			b.setDataInsideBlock(blockAddr, offset%b.BlockSize, data[:b.BlockSize-offset%b.BlockSize])
+			currentOffset += b.BlockSize - offset%b.BlockSize
+		}
 		for len(data)-currentOffset > 0 {
 			var next int
 			if (len(data) - currentOffset) > b.BlockSize {

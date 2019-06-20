@@ -24,7 +24,6 @@ func main() {
 	var promptMsg = [3]string{"fuqijun", "My-Arch-Linux", "/"}
 	printMessage(promptMsg)
 
-
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ls",
 		Help: "list",
@@ -37,7 +36,7 @@ func main() {
 		Name: "cd",
 		Help: "change work directory",
 		Completer: func([]string) []string {
-			dir,_ := v.GetFileListInCurrentDir()
+			dir, _ := v.GetFileListInCurrentDir()
 			return dir
 		},
 		Func: func(c *ishell.Context) {
@@ -83,14 +82,51 @@ func main() {
 			printMessage(promptMsg)
 		},
 	})
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "stat",
-		Help: "view the information of file",
+		Help: "view the information of f≥ile",
+		Completer: func([]string) []string {
+			dir, _ := v.GetFileListInCurrentDir()
+			return dir
+		},
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				_ = fmt.Errorf("stat error: you must input the name")
 			} else {
 				v.Stat(c.Args[0])
+			}
+			printMessage(promptMsg)
+		},
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "rm",
+		Help: "remove file",
+		Completer: func([]string) []string {
+			dir, _ := v.GetFileListInCurrentDir()
+			return dir
+		},
+		Func: func(c *ishell.Context) {
+			if len(c.Args) == 0 {
+				_ = fmt.Errorf("stat error: you must input the name")
+			} else {
+				v.Remove(c.Args[0])
+			}
+			printMessage(promptMsg)
+		},
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "append",
+		Help: "remove file",
+		Completer: func([]string) []string {
+			dir, _ := v.GetFileListInCurrentDir()
+			return dir
+		},
+		Func: func(c *ishell.Context) {
+			if len(c.Args) == 0 {
+				_ = fmt.Errorf("stat error: you must input the name")
+			} else {
+				v.Remove(c.Args[0])
 			}
 			printMessage(promptMsg)
 		},
