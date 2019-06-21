@@ -15,7 +15,8 @@ func main() {
 
 	var sb virtualFileSystem.SuperBlock
 	sb = &ext0.Ext0SuperBlock{}
-	sb.Init(true)
+	sb.Init(false)
+	defer sb.(*ext0.Ext0SuperBlock).Dump()
 	var v virtualFileSystem.Vfs
 	v.Init(sb)
 	shell := ishell.New()
