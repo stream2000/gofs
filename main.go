@@ -117,16 +117,32 @@ func main() {
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "append",
-		Help: "remove file",
+		Help: "append file",
 		Completer: func([]string) []string {
 			dir, _ := v.GetFileListInCurrentDir()
 			return dir
 		},
 		Func: func(c *ishell.Context) {
-			if len(c.Args) == 0 {
-				_ = fmt.Errorf("stat error: you must input the name")
+			if len(c.Args) < 2 {
+				_ = fmt.Errorf("append error: params error")
 			} else {
-				v.Remove(c.Args[0])
+				v.Append(c.Args[0],c.Args[1])
+			}
+			printMessage(promptMsg)
+		},
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "cat",
+		Help: "read file",
+		Completer: func([]string) []string {
+			dir, _ := v.GetFileListInCurrentDir()
+			return dir
+		},
+		Func: func(c *ishell.Context) {
+			if len(c.Args) < 1 {
+				_ = fmt.Errorf("cat error: you must input the name")
+			} else {
+				v.Cat(c.Args[0])
 			}
 			printMessage(promptMsg)
 		},

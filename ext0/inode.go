@@ -230,7 +230,7 @@ func (ino *Ext0Inode) ReadAll() (re []byte) {
 	return buf.ReadAll()
 
 }
-func (ino *Ext0Inode) Append(data []byte) int {
+func (ino *Ext0Inode) Append(data string) int {
 	attr := ino.attr
 	sb := ino.sb
 	if attr.FileType != u.OrdinaryFile {
@@ -238,7 +238,7 @@ func (ino *Ext0Inode) Append(data []byte) int {
 	}
 	var buf unifiedBuffer
 	buf.Init(BlockSize, ino)
-	cnt := buf.Write(data)
+	cnt := buf.Write([]byte(data))
 	sb.WriteInode(int(ino.attr.InodeNumber), ino.attr)
 	return cnt
 }

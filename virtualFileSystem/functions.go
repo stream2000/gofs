@@ -282,3 +282,21 @@ func beutifyString(attr InodeAttr,name string)string{
 	time := fmt.Sprintf(tm.Format("2006-01-02 03:04:05 PM"))
 	return fmt.Sprintf("drwxr-xr-x %db %-5s %-10s",attr.Size,time,blue(name))
 }
+func (v *Vfs)Append(path string,data string){
+	p,ok := v.getInodeByPath(path)
+	if ok{
+		p.Append(data)
+	}else {
+		fmt.Println("not fount")
+	}
+}
+func (v *Vfs)Cat(path string){
+	ino, ok := v.getInodeByPath(path)
+
+	if ok {
+		data := ino.ReadAll()
+		fmt.Println(string(data))
+	} else {
+		_ = fmt.Errorf("stat error: path %s not found", path)
+	}
+}

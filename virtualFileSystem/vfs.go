@@ -24,7 +24,7 @@ type Inode interface {
 	List() ([]string, bool)
 	ReadAll() []byte
 	WriteAt(offset int, data []byte) int
-	Append(data []byte) int
+	Append(data string) int
 	Remove(name string) bool
 	GetSb()SuperBlock
 	SetSb(block SuperBlock)
