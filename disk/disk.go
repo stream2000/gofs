@@ -1,29 +1,27 @@
 package disk
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"path"
 )
 
 // 随机访问的磁盘
-type Harddisk struct {
-	storage   [2 << 20]byte // 20 Mib
+type HardDisk struct {
+	storage   []byte // 20 Mib
 	blockSize int
 }
 
-func (d Harddisk) ReadBlock(blockNumber int) []byte {
+func (d HardDisk) ReadBlock(blockNumber int) []byte {
 	return d.storage[blockNumber*d.blockSize : (blockNumber+1)*d.blockSize]
 }
-func (d *Harddisk) SetBlockSize(size int) {
+func (d *HardDisk) SetBlockSize(size int) {
 	if size%2 != 0 || size < 0 {
 		return
 	}
 	d.blockSize = size
 }
-func (d *Harddisk) SetBlock(newSlice []byte, order int) {
+func (d *HardDisk) SetBlock(newSlice []byte, order int) {
 	base := d.blockSize * order
 	if len(newSlice) < int(d.blockSize) {
 		for i, x := range newSlice {
@@ -31,29 +29,48 @@ func (d *Harddisk) SetBlock(newSlice []byte, order int) {
 		}
 	}
 }
-func (d *Harddisk) UnsaveRead(begin int, end int) []byte {
+func (d *HardDisk) UnsaveRead(begin int, end int) []byte {
 	if end > len(d.storage) {
 		fmt.Println(end)
 		fmt.Println(len(d.storage))
 	}
 	return d.storage[begin:end]
 }
-func (d Harddisk) Dump() {
-	fp, _ := os.Create(path.Join("dev", "zero.ext0fs"))
-	defer fp.Close()
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, d.storage)
-	if err != nil {
-		fmt.Println(err)
+func (d HardDisk) Dump() {
+
+	err := ioutil.WriteFile("ext0fs.bk", d.storage, 0777)
+	if err != nil{
+		_ = fmt.Errorf("error when dump")
 	}
 }
-func (d *Harddisk) InitFromDiskFile(name string) {
-	fp, _ := os.Open(name)
-	defer fp.Close()
-	dataSlice := d.storage[:]
-	n, _ := fp.Read(dataSlice)
-	if n != 20<<20 {
-		fmt.Errorf("fatal error")
+func  NewDisk(path string,format bool,BlockSize int)(d HardDisk,ok bool) {
+	if BlockSize%2 != 0 || BlockSize < 0 {
+		fmt.Println("wrong block size")
+		return
 	}
+	if format{
+		d = HardDisk{
+			storage:make([]byte,2<<20),
+			blockSize:BlockSize,
+		}
+		return d,true
+	}else {
+		d.storage = make([]byte,2<<20)
+		d.blockSize = BlockSize
 
+		fp, err := os.Open(path)
+		defer fp.Close()
+		if err != nil{
+			fmt.Errorf("Read file error")
+			return d,false
+		}else {
+			dataSlice := d.storage
+			n, _ := fp.Read(dataSlice)
+			if n < 2<<20 {
+				_ = fmt.Errorf("fatal error,size is not fit,expect to read %d, in fact %d",2<<20,n)
+				return d,false
+			}
+		}
+	}
+	return d,true
 }

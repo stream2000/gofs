@@ -7,8 +7,6 @@ package ext0
 // 这时候就需要一个统一的buffer进行文件的读写啦
 // 这个buffer必须表现得和一个连续的文件一模一样
 
-// 事实证明，对内部的slice的操作可以直接影响
-
 // All operations about data blocks in memory disk  can be achieved by this buffer
 /*
 Features :
@@ -192,6 +190,8 @@ func (b unifiedBuffer) ReadAll() (result []byte) {
 	}
 	return result[:b.CurrentSize]
 }
+
+// trunc
 func (b *unifiedBuffer) resize(newSize int) bool {
 	blocksNeeded := newSize/b.BlockSize + 1
 	defer b.sb.WriteInode(int(b.ino.attr.InodeNumber), b.ino.attr)

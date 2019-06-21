@@ -36,7 +36,7 @@ type Ext0SuperBlock struct {
 	InodeNumber     uint64
 	FreeInodeNumber uint64
 	FreeBlockNumber uint64
-	disk            disk.Harddisk
+	disk            disk.HardDisk
 	sysType         uint64
 }
 
@@ -54,27 +54,30 @@ func (sb *Ext0SuperBlock) NewSuperBlock() {
 	sb.BlockNumber = DataBlockNumber
 	sb.sysType = u.Ext0
 }
-func (sb *Ext0SuperBlock) formatDisk() {
-	var emptyByte byte
-	fatSlice := sb.disk.UnsaveRead(FatStartAddr, BlockBitmapStartAddr)
-	blockBitmapSlice := sb.disk.UnsaveRead(BlockBitmapStartAddr, InodeBitmapStartAddr)
-	inodeBitmapSlice := sb.disk.UnsaveRead(InodeBitmapStartAddr, InodeStartAddr)
-	inodeSlice := sb.disk.UnsaveRead(InodeStartAddr, DataStartAddr)
-	dataSlice := sb.disk.UnsaveRead(DataStartAddr, DataEndAddr)
-	memsetRepeat(fatSlice, emptyByte)
-	memsetRepeat(blockBitmapSlice, emptyByte)
-	memsetRepeat(inodeBitmapSlice, emptyByte)
-	memsetRepeat(inodeSlice, emptyByte)
-	memsetRepeat(dataSlice, emptyByte)
-	sb.NewSuperBlock()
-
-	sb.writeSuperBlock()
-}
-
 // TODO initFromDisk
-func (sb *Ext0SuperBlock) Init() {
-	sb.formatDisk()
-	sb.initRootInode()
+func (sb *Ext0SuperBlock) Init(format bool) {
+	if format{
+		d,ok := disk.NewDisk("",true,BlockSize)
+		if ok{
+			sb.disk = d
+		}else {
+			fmt.Println("error occur when format disk")
+		}
+		sb.NewSuperBlock()
+		sb.initRootInode()
+		sb.writeSuperBlock()
+	}else {
+		d,ok := disk.NewDisk("ext0fs.bk",false,BlockSize)
+		if ok{
+			sb.disk = d
+		}else {
+			fmt.Println("error occur when format disk")
+		}
+		sb.RecoverFromDisk()
+	}
+}
+func (sb *Ext0SuperBlock) Dump(){
+	sb.disk.Dump()
 }
 func (sb *Ext0SuperBlock) CreateFile(name string, p vfs.Inode, fileType int) (n vfs.Inode) {
 	var ino Ext0Inode

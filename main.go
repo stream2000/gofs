@@ -5,6 +5,7 @@ import (
 	"./virtualFileSystem"
 	"fmt"
 	"github.com/abiosoft/ishell"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -14,9 +15,9 @@ func main() {
 
 	var sb virtualFileSystem.SuperBlock
 	sb = &ext0.Ext0SuperBlock{}
+	sb.Init(true)
 	var v virtualFileSystem.Vfs
 	v.Init(sb)
-
 	shell := ishell.New()
 	red := color.New(color.FgHiRed).SprintFunc()
 	shell.SetPrompt(red("$ "))
@@ -36,7 +37,7 @@ func main() {
 		Name: "cd",
 		Help: "change work directory",
 		Completer: func([]string) []string {
-			dir, _ := v.GetFileListInCurrentDir()
+			dir, _ := v.GetDiristInCurrentDir()
 			return dir
 		},
 		Func: func(c *ishell.Context) {
@@ -123,10 +124,15 @@ func main() {
 			return dir
 		},
 		Func: func(c *ishell.Context) {
-			if len(c.Args) < 2 {
+			if len(c.Args) < 1 {
 				_ = fmt.Errorf("append error: params error")
 			} else {
-				v.Append(c.Args[0],c.Args[1])
+				yellow := color.New(color.FgHiYellow).SprintFunc()
+				c.Printf("%s",yellow("Input multiple lines and end with semicolon ';'.\n"))
+				// 设置结束符
+				lines := c.ReadMultiLines(";")
+				c.Printf("%s",yellow("Input finished\n"))
+				v.Append(c.Args[0],lines)
 			}
 			printMessage(promptMsg)
 		},
@@ -155,5 +161,7 @@ func printMessage(s [3]string) {
 	yellow := color.New(color.FgHiYellow).SprintFunc()
 	blue := color.New(color.FgHiCyan).SprintFunc()
 	nBlule := color.New(color.FgHiBlue).SprintFunc()
-	fmt.Printf("%s %s @ %s in %s\n", nBlule("#"), blue(s[0]), green(s[1]), yellow(s[2]))
+	t := time.Now()
+	time := fmt.Sprintf(t.Format("03:04:05"))
+	fmt.Printf("%s %s @ %s in %s [%s]\n", nBlule("#"), blue(s[0]), green(s[1]), yellow(s[2]),time)
 }

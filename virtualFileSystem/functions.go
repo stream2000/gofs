@@ -10,6 +10,14 @@ import (
 	"time"
 )
 
+
+
+
+
+// TODO 5.  修改文件时未修改其改动时间 优先级4
+// TODO 7.  打印超级块功能 优先级4
+// TODO 8.  超级块属性维护（计算剩余inode数，计算磁盘空间等）优先级4
+
 func Hash(fsMagic int, inodeNum int) string {
 	return strconv.Itoa(fsMagic) + "|" + strconv.Itoa(inodeNum)
 }
@@ -38,7 +46,6 @@ func (v Vfs) isMountPoint(p string) bool {
 // 如果是的话，通过vfsmount结构可以得到当前目录的超级块
 // 一个目录项若要成为挂载点，那么它首先应该存在，并且为空目录
 func (v *Vfs) Init(sb SuperBlock) {
-	sb.Init()
 	v.rootSb = sb
 	v.rootVnode.inode = sb.GetRoot()
 	v.rootVnode.sb = sb
@@ -47,12 +54,19 @@ func (v *Vfs) Init(sb SuperBlock) {
 	v.mount = append(v.mount, vfsMount{mountPoint: v.mountPointList[0], sb: sb, order: 0})
 	v.inodeCache = cache.NewMemCache(30)
 }
+func (v *Vfs) WriteBack(sb SuperBlock){
 
+}
 func (v Vfs) Pwd() {
 	fmt.Println(v.curDir.pathString)
 }
 func (v Vfs) GetCur() string {
 	return v.curDir.pathString
+}
+// TODO 3.  多文件系统基础设施已经打好，未实现（mount和unmount功能）优先级3
+
+func (v *Vfs)registerSuperBlock(path string,order int){
+
 }
 func (v Vfs) getInodeByPath(path string) (Inode, bool) {
 	if path == "/" {
@@ -113,6 +127,7 @@ func (v *Vfs) ChangeDir(path string) {
 		fmt.Println("不存在这样的目录")
 	}
 }
+// TODO 1.  对不同的指令设置不同的补全项 优先级0
 func (v Vfs) GetFileListInCurrentDir() (list []string, ok bool) {
 	ino, ok := v.getInodeByPath(v.curDir.pathString)
 	if ok {
@@ -129,7 +144,29 @@ func (v Vfs) GetFileListInCurrentDir() (list []string, ok bool) {
 	}
 	return
 }
-
+func (v Vfs) GetDiristInCurrentDir() (dirs []string, ok bool) {
+	ino, ok := v.getInodeByPath(v.curDir.pathString)
+	if ok {
+		if ino.GetAttr().FileType != u.Directory {
+			fmt.Println("错误！当前项不是一个目录！")
+		} else {
+			list, ok := ino.List()
+			if ok {
+				for _, x := range list {
+					num := ino.LookUp(x)
+					cino := ino.GetSb().ReadInode(num)
+					if cino.GetAttr().FileType == u.Directory {
+						dirs = append(dirs, x)
+					}
+				}
+				return dirs, true
+			}
+		}
+	} else {
+		fmt.Println("当前目录不存在")
+	}
+	return
+}
 func (v *Vfs) ListCurrentDir() {
 	ino, ok := v.getInodeByPath(v.curDir.pathString)
 	if ok {
@@ -139,8 +176,10 @@ func (v *Vfs) ListCurrentDir() {
 			list, ok := ino.List()
 			if ok {
 				for _, x := range list {
-					in,_ := v.getInodeByPath(x)
-					fmt.Println(beutifyString(in.GetAttr(),x))
+					in, _ := v.getInodeByPath(x)
+					if in.GetAttr().FileType != 0 && x != "" {
+						fmt.Println(beutifyString(in.GetAttr(), x))
+					}
 				}
 
 			}
@@ -202,7 +241,6 @@ flag:
 		v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
 	} else {
 		v.createParentDir(parentPath)
-		fmt.Println("flag!")
 		goto flag
 	}
 }
@@ -222,7 +260,7 @@ func (p Path) splitParentAndChild() (parent string, child string) {
 	child = p.pathSlice[p.depth-1]
 	return
 }
-
+// TODO 10. 解析".",".."目录
 func (v Vfs) parseRelativePath(path string) string {
 	if !strings.HasPrefix(path, "/") {
 		// 说明要解析的是相对路径
@@ -256,6 +294,7 @@ func (v *Vfs) createParentDir(path string) {
 		}
 	}
 }
+// TODO 2.  删除文件时未考虑Cache一致性 优先级0
 func (v *Vfs) Remove(path string) {
 	p := v.initPath(path)
 	path = p.pathString
@@ -276,21 +315,29 @@ func (v *Vfs) Remove(path string) {
 		_ = fmt.Errorf("Not such file ", path)
 	}
 }
-func beutifyString(attr InodeAttr,name string)string{
+func beutifyString(attr InodeAttr, name string) string {
 	tm := time.Unix(int64(attr.Ctime), 0)
 	blue := color.New(color.FgHiCyan).SprintFunc()
 	time := fmt.Sprintf(tm.Format("2006-01-02 03:04:05 PM"))
-	return fmt.Sprintf("drwxr-xr-x %db %-5s %-10s",attr.Size,time,blue(name))
+	fileType := ""
+	if attr.FileType == u.Directory {
+		fileType += "Directory"
+		name = blue(name)
+	} else {
+		fileType += "Plain Text"
+	}
+	return fmt.Sprintf("drwxr-xr-x  %5db %s %-10s %-20s", attr.Size, time, fileType, name)
 }
-func (v *Vfs)Append(path string,data string){
-	p,ok := v.getInodeByPath(path)
-	if ok{
+// TODO 4.  编辑文件功能残缺 优先级0
+func (v *Vfs) Append(path string, data string) {
+	p, ok := v.getInodeByPath(path)
+	if ok {
 		p.Append(data)
-	}else {
+	} else {
 		fmt.Println("not fount")
 	}
 }
-func (v *Vfs)Cat(path string){
+func (v *Vfs) Cat(path string) {
 	ino, ok := v.getInodeByPath(path)
 
 	if ok {
@@ -299,4 +346,10 @@ func (v *Vfs)Cat(path string){
 	} else {
 		_ = fmt.Errorf("stat error: path %s not found", path)
 	}
+}
+
+// TODO 9. 软链接的基本实现 优先级5
+
+func (v *Vfs) SoftLink(path1 string, path2 string) {
+
 }

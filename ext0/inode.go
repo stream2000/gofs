@@ -14,10 +14,6 @@ type Ext0Inode struct {
 	sb   *Ext0SuperBlock
 }
 
-// 存储在数据区,每256byte一个目录项
-// 众所周知，我的ext0文件系统的块大小为1kb
-// 所以一个块可以存储 1024/256 = 4 个目录项 ？？ 迷惑
-// 但是问题不大
 type Exto0DirectoryStorage struct {
 	name        [DirStorageSIze - 2]byte // total 256byte
 	inodeNumber uint16                   // 2 byte
@@ -75,7 +71,7 @@ func (ino *Ext0Inode) List() (dirList []string, ok bool) {
 	} else {
 		dir := ino.sb.ReadDir(ino.attr)
 		for _, d := range dir {
-			if getName(d.name) == "." || getName(d.name) == ".." {
+			if getName(d.name) == "." || getName(d.name) == ".." ||getName(d.name)== ""{
 				continue
 			}
 			dirList = append(dirList, getName(d.name))
@@ -252,7 +248,7 @@ func (ino *Ext0Inode) Remove(name string) (ok bool) {
 	childNum := ino.LookUp(name)
 
 	if childNum == 0 {
-		fmt.Println("can't find child with name ",name)
+		fmt.Println("can't find child with name ", name)
 	}
 	dir := ino.sb.ReadDir(ino.attr)
 
@@ -262,7 +258,7 @@ func (ino *Ext0Inode) Remove(name string) (ok bool) {
 
 	for i, d := range dir {
 
-		if d.inodeNumber == uint16(childNum){
+		if d.inodeNumber == uint16(childNum) {
 
 			// 找到这个inode,将它在目录中的存储清空
 
@@ -283,9 +279,9 @@ func (ino *Ext0Inode) Remove(name string) (ok bool) {
 
 	return
 }
-func (ino *Ext0Inode)SetSb(sb vfs.SuperBlock){
+func (ino *Ext0Inode) SetSb(sb vfs.SuperBlock) {
 	ino.sb = sb.(*Ext0SuperBlock)
 }
-func (ino *Ext0Inode)GetSb()vfs.SuperBlock{
+func (ino *Ext0Inode) GetSb() vfs.SuperBlock {
 	return ino.sb
 }

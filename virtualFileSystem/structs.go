@@ -7,10 +7,9 @@ import (
 type SuperBlock interface {
 	NewSuperBlock()
 	ReadInode(number int) Inode            // when create an vInode,read it from disk
-	WriteInode(number int, data InodeAttr) // write an vInode to disk
-	//DestroyInode(num int) bool             // when there is no refference to an vInode, call this function to drop an vInode in memory
+	WriteInode(number int, data InodeAttr) // write back inode to disk
 	RecoverFromDisk()
-	Init()
+	Init(format bool)
 	GetRoot() Inode
 	CreateFile(name string, p Inode, mode int) (n Inode)
 }
@@ -26,7 +25,7 @@ type Inode interface {
 	WriteAt(offset int, data []byte) int
 	Append(data string) int
 	Remove(name string) bool
-	GetSb()SuperBlock
+	GetSb() SuperBlock
 	SetSb(block SuperBlock)
 }
 type InodeAttr struct {
@@ -44,7 +43,7 @@ type InodeAttr struct {
 	StartAddr   uint16
 }
 type vfsInode struct {
-	data  InodeAttr
+	attr  InodeAttr
 	sb    SuperBlock
 	inode Inode
 }
@@ -54,20 +53,11 @@ type vfsMount struct {
 	root       Path
 	order      int
 }
-type file struct {
-	count int // open count
-	fPath Path
-}
-
 type Path struct {
 	pathString   string
 	currentIndex int
 	pathSlice    []string
 	depth        int
-}
-type inodeHash struct {
-	fsMagic int
-	num     int
 }
 
 type Vfs struct {
