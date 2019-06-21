@@ -54,32 +54,33 @@ func (sb *Ext0SuperBlock) NewSuperBlock() {
 	sb.BlockNumber = DataBlockNumber
 	sb.sysType = u.Ext0
 }
+
 // TODO initFromDisk
 func (sb *Ext0SuperBlock) Init(format bool) {
-	if format{
-		d,ok := disk.NewDisk("",true,BlockSize)
-		if ok{
+	if format {
+		d, ok := disk.NewDisk("", true, BlockSize)
+		if ok {
 			sb.disk = d
-		}else {
+		} else {
 			fmt.Println("error occur when format disk")
 		}
 		sb.NewSuperBlock()
 		sb.initRootInode()
 		sb.writeSuperBlock()
-	}else {
-		d,ok := disk.NewDisk("ext0fs.bk",false,BlockSize)
-		if ok{
+	} else {
+		d, ok := disk.NewDisk("ext0fs.bk", false, BlockSize)
+		if ok {
 			sb.disk = d
-		}else {
+		} else {
 			fmt.Println("error occur when format disk")
 		}
 		sb.RecoverFromDisk()
 	}
 }
-func (sb *Ext0SuperBlock) Dump(){
+func (sb *Ext0SuperBlock) Dump() {
 	sb.disk.Dump()
 }
-func (sb *Ext0SuperBlock) CreateFile(name string, p vfs.Inode, fileType int) (n vfs.Inode) {
+func (sb *Ext0SuperBlock) CreateFile(name string, p vfs.Inode, fileType int) {
 	var ino Ext0Inode
 	var num uint16
 	if fileType == int(u.OrdinaryFile) {

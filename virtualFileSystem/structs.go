@@ -11,7 +11,7 @@ type SuperBlock interface {
 	RecoverFromDisk()
 	Init(format bool)
 	GetRoot() Inode
-	CreateFile(name string, p Inode, mode int) (n Inode)
+	CreateFile(name string, p Inode, mode int)
 }
 type Inode interface {
 	Create()

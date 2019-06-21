@@ -1,7 +1,6 @@
 package virtualFileSystem
 
 import (
-	cache "../LruCache"
 	u "../utilities"
 	"fmt"
 	"github.com/fatih/color"
@@ -9,10 +8,6 @@ import (
 	"strings"
 	"time"
 )
-
-
-
-
 
 // TODO 5.  修改文件时未修改其改动时间 优先级4
 // TODO 7.  打印超级块功能 优先级4
@@ -52,9 +47,8 @@ func (v *Vfs) Init(sb SuperBlock) {
 	v.curDir = v.initPath("/")
 	v.mountPointList = append(v.mountPointList, v.initPath("/"))
 	v.mount = append(v.mount, vfsMount{mountPoint: v.mountPointList[0], sb: sb, order: 0})
-	v.inodeCache = cache.NewMemCache(30)
 }
-func (v *Vfs) WriteBack(sb SuperBlock){
+func (v *Vfs) WriteBack(sb SuperBlock) {
 
 }
 func (v Vfs) Pwd() {
@@ -63,12 +57,13 @@ func (v Vfs) Pwd() {
 func (v Vfs) GetCur() string {
 	return v.curDir.pathString
 }
+
 // TODO 3.  多文件系统基础设施已经打好，未实现（mount和unmount功能）优先级3
 
-func (v *Vfs)registerSuperBlock(path string,order int){
+func (v *Vfs) registerSuperBlock(path string, order int) {
 
 }
-func (v Vfs) getInodeByPath(path string) (Inode, bool) {
+func (v *Vfs) getInodeByPath(path string) (Inode, bool) {
 	if path == "/" {
 		v.curDir = v.initPath(path)
 		return v.rootVnode.inode, true
@@ -90,19 +85,12 @@ func (v Vfs) getInodeByPath(path string) (Inode, bool) {
 			newInodeNum := curInode.LookUp(x)
 
 			if newInodeNum > 0 {
-				hashValueOfCurInode := Hash(0, newInodeNum)
-				// 从缓存中搜索inode
-				cachedInode, flag := v.inodeCache.Get(hashValueOfCurInode)
-				if flag {
-					curInode = cachedInode.(Inode)
-				} else {
-					nInode := curMnt.sb.ReadInode(newInodeNum)
-					// 将新读取的inode加入缓存
-					nInode.SetSb(v.rootSb)
-					v.inodeCache.Set(Hash(curMnt.order, newInodeNum), nInode)
-					curInode = nInode
-				}
-			} else { // 并没有这样的目录项
+				nInode := curMnt.sb.ReadInode(newInodeNum)
+				nInode.SetSb(v.rootSb)
+				curInode = nInode
+			} else {
+				fmt.Println("no such kind of dir in path",path," with name ",x)
+				curInode.SetSb(v.rootSb)
 				return curInode, false
 			}
 		}
@@ -127,8 +115,9 @@ func (v *Vfs) ChangeDir(path string) {
 		fmt.Println("不存在这样的目录")
 	}
 }
+
 // TODO 1.  对不同的指令设置不同的补全项 优先级0
-func (v Vfs) GetFileListInCurrentDir() (list []string, ok bool) {
+func (v *Vfs) GetFileListInCurrentDir() (list []string, ok bool) {
 	ino, ok := v.getInodeByPath(v.curDir.pathString)
 	if ok {
 		if ino.GetAttr().FileType != u.Directory {
@@ -144,7 +133,7 @@ func (v Vfs) GetFileListInCurrentDir() (list []string, ok bool) {
 	}
 	return
 }
-func (v Vfs) GetDiristInCurrentDir() (dirs []string, ok bool) {
+func (v *Vfs) GetDiristInCurrentDir() (dirs []string, ok bool) {
 	ino, ok := v.getInodeByPath(v.curDir.pathString)
 	if ok {
 		if ino.GetAttr().FileType != u.Directory {
@@ -230,8 +219,8 @@ func (v *Vfs) MakeDir(path string) {
 		return
 	}
 	parentPath, childName := p.splitParentAndChild()
+	fmt.Println(parentPath,childName)
 
-flag:
 	parentInode, ok := v.getInodeByPath(parentPath)
 	if ok {
 		if parentInode.GetAttr().FileType != u.Directory {
@@ -241,7 +230,16 @@ flag:
 		v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
 	} else {
 		v.createParentDir(parentPath)
-		goto flag
+		parentInode, ok := v.getInodeByPath(parentPath)
+		if ok {
+			if parentInode.GetAttr().FileType != u.Directory {
+				fmt.Println("mkdir error: ", "path: ", parentPath, " is not a directory")
+				return
+			}
+			v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
+		}else {
+			fmt.Println("Fatal error, no possible")
+		}
 	}
 }
 func (p Path) splitParentAndChild() (parent string, child string) {
@@ -260,8 +258,9 @@ func (p Path) splitParentAndChild() (parent string, child string) {
 	child = p.pathSlice[p.depth-1]
 	return
 }
+
 // TODO 10. 解析".",".."目录
-func (v Vfs) parseRelativePath(path string) string {
+func (v *Vfs) parseRelativePath(path string) string {
 	if !strings.HasPrefix(path, "/") {
 		// 说明要解析的是相对路径
 		if v.curDir.pathString == "/" {
@@ -285,15 +284,20 @@ func (v *Vfs) createParentDir(path string) {
 		num := curInode.LookUp(x)
 		if num == 0 {
 			curSb.CreateFile(x, curInode, 2)
+
 			num := curInode.LookUp(x)
 			if num > 0 {
 				curInode = curSb.ReadInode(num)
+				fmt.Println("Create ",x," num ",curInode.GetAttr().InodeNumber)
+			}else {
+				fmt.Println("impossible")
 			}
 		} else {
 
 		}
 	}
 }
+
 // TODO 2.  删除文件时未考虑Cache一致性 优先级0
 func (v *Vfs) Remove(path string) {
 	p := v.initPath(path)
@@ -328,6 +332,7 @@ func beutifyString(attr InodeAttr, name string) string {
 	}
 	return fmt.Sprintf("drwxr-xr-x  %5db %s %-10s %-20s", attr.Size, time, fileType, name)
 }
+
 // TODO 4.  编辑文件功能残缺 优先级0
 func (v *Vfs) Append(path string, data string) {
 	p, ok := v.getInodeByPath(path)

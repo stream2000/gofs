@@ -71,7 +71,7 @@ func (ino *Ext0Inode) List() (dirList []string, ok bool) {
 	} else {
 		dir := ino.sb.ReadDir(ino.attr)
 		for _, d := range dir {
-			if getName(d.name) == "." || getName(d.name) == ".." ||getName(d.name)== ""{
+			if getName(d.name) == "." || getName(d.name) == ".." || getName(d.name) == "" {
 				continue
 			}
 			dirList = append(dirList, getName(d.name))
