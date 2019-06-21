@@ -1,56 +1,18 @@
 package main
 
 import (
-	"./ext0"
-	"./virtualFileSystem"
+	"vfs/ext0"
+	"vfs/virtualFileSystem"
 	"fmt"
 	"github.com/abiosoft/ishell"
 	"time"
-
 	"github.com/fatih/color"
 )
 
 func main() {
-	shell()
-}
-
-func testInstructions(){
-	//var sbI virtualFileSystem.SuperBlock = new (ext0.Ext0SuperBlock)
 	var sb virtualFileSystem.SuperBlock
 	sb = &ext0.Ext0SuperBlock{}
-	sb.Init(true)
-	//	defer sb.(*ext0.Ext0SuperBlock).Dump()
-	var v virtualFileSystem.Vfs
-	v.Init(sb)
-	v.Touch("new")
-	v.ListCurrentDir()
-	v.MakeDir("mnt/kk/kk")
-	v.ListCurrentDir()
-	v.Remove("mnt")
-	v.ListCurrentDir()
-	v.Stat("new")
-	v.Touch("new2")
-	v.Stat("new2")
-	v.MakeDir("mnt/new/mkmkk/lo")
-	v.ChangeDir("mnt")
-	v.Remove("new")
-	v.Touch("kk")
-	v.Stat("kk")
-}
-func printMessage(s [3]string) {
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgHiYellow).SprintFunc()
-	blue := color.New(color.FgHiCyan).SprintFunc()
-	nBlule := color.New(color.FgHiBlue).SprintFunc()
-	t := time.Now()
-	time := fmt.Sprintf(t.Format("03:04:05"))
-	fmt.Printf("%s %s @ %s in %s [%s]\n", nBlule("#"), blue(s[0]), green(s[1]), yellow(s[2]), time)
-}
-
-func shell(){
-	var sb virtualFileSystem.SuperBlock
-	sb = &ext0.Ext0SuperBlock{}
-	sb.Init(true)
+	sb.Init(false)
 	defer sb.(*ext0.Ext0SuperBlock).Dump()
 	var v virtualFileSystem.Vfs
 	v.Init(sb)
@@ -60,7 +22,6 @@ func shell(){
 	// display welcome info.
 	var promptMsg = [3]string{"fuqijun", "My-Arch-Linux", "/"}
 	printMessage(promptMsg)
-
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ls",
 		Help: "list",
@@ -96,7 +57,7 @@ func shell(){
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "touch",
-		Help: "list",
+		Help: "create new empty file",
 		Func: func(c *ishell.Context) {
 
 			if len(c.Args) == 0 {
@@ -109,7 +70,7 @@ func shell(){
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "mkdir",
-		Help: "list",
+		Help: "make dir ",
 		Func: func(c *ishell.Context) {
 			if len(c.Args) == 0 {
 				_ = fmt.Errorf("mkdir error: you must input the name")
@@ -191,4 +152,14 @@ func shell(){
 	})
 	// run shell
 	shell.Run()
+}
+
+func printMessage(s [3]string) {
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgHiYellow).SprintFunc()
+	blue := color.New(color.FgHiCyan).SprintFunc()
+	nBlule := color.New(color.FgHiBlue).SprintFunc()
+	t := time.Now()
+	time := fmt.Sprintf(t.Format("03:04:05"))
+	fmt.Printf("%s %s @ %s in %s [%s]\n", nBlule("#"), blue(s[0]), green(s[1]), yellow(s[2]), time)
 }

@@ -1,9 +1,5 @@
 package virtualFileSystem
 
-import (
-	"../LruCache"
-)
-
 type SuperBlock interface {
 	NewSuperBlock()
 	ReadInode(number int) Inode            // when create an vInode,read it from disk
@@ -47,12 +43,6 @@ type vfsInode struct {
 	sb    SuperBlock
 	inode Inode
 }
-type vfsMount struct {
-	mountPoint Path
-	sb         SuperBlock
-	root       Path
-	order      int
-}
 type Path struct {
 	pathString   string
 	currentIndex int
@@ -61,11 +51,7 @@ type Path struct {
 }
 
 type Vfs struct {
-	rootVnode vfsInode
-	//rootDentry Dentry
-	inodeCache     cache.Cache
-	rootSb         SuperBlock
-	mountPointList []Path
-	mount          []vfsMount
-	curDir         Path
+	rootVnode  vfsInode
+	rootSb     SuperBlock
+	curDir     Path
 }

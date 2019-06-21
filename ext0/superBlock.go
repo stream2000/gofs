@@ -1,15 +1,13 @@
 package ext0
 
 import (
-	"../disk"
-	u "../utilities"
-	vfs "../virtualFileSystem"
+	"vfs/disk"
+	u "vfs/utilities"
+	vfs "vfs/virtualFileSystem"
 	"encoding/binary"
 	"fmt"
 	"time"
 )
-
-//在 go语言中不需要手动管理内存，所以alloc_inode 和destroy是不是不需要的
 
 /* TODO  2. 从磁盘文件恢复系统
 
@@ -95,25 +93,6 @@ func (sb *Ext0SuperBlock) CreateFile(name string, p vfs.Inode, fileType int) {
 
 	return
 }
-func (sb *Ext0SuperBlock) initAttr() (attr vfs.InodeAttr) {
-	attr = vfs.InodeAttr{
-		LinkCount: 1,
-		Ctime:     uint32(time.Now().Unix()),
-		Mtime:     uint32(time.Now().Unix()),
-		Atime:     uint32(time.Now().Unix()),
-		Size:      0,
-	}
-	return attr
-}
-func memsetRepeat(a []byte, v byte) {
-	if len(a) == 0 {
-		return
-	}
-	a[0] = v
-	for bp := 1; bp < len(a); bp *= 2 {
-		copy(a[bp:], a[:bp])
-	}
-}
 
 // 仅仅返回数字，不多做操作
 func (sb *Ext0SuperBlock) GetNextFreeInodeNumber() uint16 {
@@ -178,6 +157,26 @@ func (sb *Ext0SuperBlock) ReadDir(attr vfs.InodeAttr) (dir []Exto0DirectoryStora
 }
 func (sb *Ext0SuperBlock) GetRoot() vfs.Inode {
 	return sb.ReadInode(0)
+}
+
+func (sb *Ext0SuperBlock) initAttr() (attr vfs.InodeAttr) {
+	attr = vfs.InodeAttr{
+		LinkCount: 1,
+		Ctime:     uint32(time.Now().Unix()),
+		Mtime:     uint32(time.Now().Unix()),
+		Atime:     uint32(time.Now().Unix()),
+		Size:      0,
+	}
+	return attr
+}
+func memsetRepeat(a []byte, v byte) {
+	if len(a) == 0 {
+		return
+	}
+	a[0] = v
+	for bp := 1; bp < len(a); bp *= 2 {
+		copy(a[bp:], a[:bp])
+	}
 }
 func (sb *Ext0SuperBlock) destroyInode(ino *Ext0Inode) (ok bool) {
 	// 当硬链接数大于1时无法删除

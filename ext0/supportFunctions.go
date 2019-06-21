@@ -1,7 +1,7 @@
 package ext0
 
 import (
-	vfs "../virtualFileSystem"
+	vfs "vfs/virtualFileSystem"
 	"encoding/binary"
 )
 

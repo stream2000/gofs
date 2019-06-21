@@ -1,11 +1,12 @@
 package ext0
 
 import (
-	vfs "../virtualFileSystem"
+	vfs "vfs/virtualFileSystem"
 	"encoding/binary"
 	"fmt"
+	u "vfs/utilities"
 )
-import u "../utilities"
+
 
 type FileType int
 

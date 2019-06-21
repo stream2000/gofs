@@ -1,7 +1,7 @@
 package virtualFileSystem
 
 import (
-	u "../utilities"
+	u "vfs/utilities"
 	"fmt"
 	"github.com/fatih/color"
 	"strconv"
@@ -28,15 +28,6 @@ func (v Vfs) initPath(path string) (p Path) {
 	return
 }
 
-func (v Vfs) isMountPoint(p string) bool {
-	//for _, x := range v.mountPointList {
-	//	if p == x.pathString {
-	//		return true
-	//	}
-	//}
-	return false
-}
-
 // 查询过程中，很重要的一个点是判断当前的目录是不是一个挂载点
 // 如果是的话，通过vfsmount结构可以得到当前目录的超级块
 // 一个目录项若要成为挂载点，那么它首先应该存在，并且为空目录
@@ -45,11 +36,6 @@ func (v *Vfs) Init(sb SuperBlock) {
 	v.rootVnode.inode = sb.GetRoot()
 	v.rootVnode.sb = sb
 	v.curDir = v.initPath("/")
-	v.mountPointList = append(v.mountPointList, v.initPath("/"))
-	v.mount = append(v.mount, vfsMount{mountPoint: v.mountPointList[0], sb: sb, order: 0})
-}
-func (v *Vfs) WriteBack(sb SuperBlock) {
-
 }
 func (v Vfs) Pwd() {
 	fmt.Println(v.curDir.pathString)
@@ -71,29 +57,25 @@ func (v *Vfs) getInodeByPath(path string) (Inode, bool) {
 
 	p := v.initPath(path)
 	path = p.pathString
-
+	sb := v.rootSb
 	curInode := v.rootVnode.inode
-	curMnt := v.mount[0]
 	curDir := "/"
-	curMnt.sb = v.rootSb
+
 	for _, x := range p.pathSlice {
 		curDir += x
 		// FIXME mount
-		if v.isMountPoint(curDir) {
+		newInodeNum := curInode.LookUp(x)
 
+		if newInodeNum > 0 {
+			nInode := sb.ReadInode(newInodeNum)
+			nInode.SetSb(sb)
+			curInode = nInode
 		} else {
-			newInodeNum := curInode.LookUp(x)
-
-			if newInodeNum > 0 {
-				nInode := curMnt.sb.ReadInode(newInodeNum)
-				nInode.SetSb(v.rootSb)
-				curInode = nInode
-			} else {
-				fmt.Println("no such kind of dir in path",path," with name ",x)
-				curInode.SetSb(v.rootSb)
-				return curInode, false
-			}
+			fmt.Println("no such kind of dir in path", path, " with name ", x)
+			curInode.SetSb(v.rootSb)
+			return curInode, false
 		}
+
 	}
 	curInode.SetSb(v.rootSb)
 	return curInode, true
@@ -219,7 +201,6 @@ func (v *Vfs) MakeDir(path string) {
 		return
 	}
 	parentPath, childName := p.splitParentAndChild()
-	fmt.Println(parentPath,childName)
 
 	parentInode, ok := v.getInodeByPath(parentPath)
 	if ok {
@@ -237,7 +218,7 @@ func (v *Vfs) MakeDir(path string) {
 				return
 			}
 			v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
-		}else {
+		} else {
 			fmt.Println("Fatal error, no possible")
 		}
 	}
@@ -284,12 +265,9 @@ func (v *Vfs) createParentDir(path string) {
 		num := curInode.LookUp(x)
 		if num == 0 {
 			curSb.CreateFile(x, curInode, 2)
-
 			num := curInode.LookUp(x)
 			if num > 0 {
 				curInode = curSb.ReadInode(num)
-				fmt.Println("Create ",x," num ",curInode.GetAttr().InodeNumber)
-			}else {
 				fmt.Println("impossible")
 			}
 		} else {
