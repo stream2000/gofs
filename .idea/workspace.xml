@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ae985772-b11a-4b1c-8e85-4e2a7a519389" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/ext0/inode.go" beforeDir="false" afterPath="$PROJECT_DIR$/ext0/inode.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/virtualFileSystem/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/virtualFileSystem/functions.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/virtualFileSystem/vfs.go" beforeDir="false" afterPath="$PROJECT_DIR$/virtualFileSystem/vfs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LruCache/men_test.go" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -53,8 +50,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="684">
-              <caret line="156" column="52" lean-forward="true" selection-start-line="156" selection-start-column="52" selection-end-line="156" selection-end-column="52" />
+            <state relative-caret-position="534">
+              <caret line="146" column="35" lean-forward="true" selection-start-line="146" selection-start-column="35" selection-end-line="146" selection-end-column="35" />
             </state>
           </provider>
         </entry>
@@ -206,7 +203,7 @@
     <frame x="0" y="0" width="1920" height="1080" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49939832" visible="true" weight="0.12726304" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49939832" visible="true" weight="0.12726304" />
       <window_info id="Favorites" order="1" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32891566" />
@@ -224,7 +221,7 @@
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Database" order="3" weight="0.32897604" />
-      <window_info active="true" anchor="right" id="Structure" order="4" sideWeight="0.5006017" visible="true" weight="0.26996806" />
+      <window_info anchor="right" id="Structure" order="4" sideWeight="0.5006017" visible="true" weight="0.26996806" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -325,8 +322,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="684">
-          <caret line="156" column="52" lean-forward="true" selection-start-line="156" selection-start-column="52" selection-end-line="156" selection-end-column="52" />
+        <state relative-caret-position="534">
+          <caret line="146" column="35" lean-forward="true" selection-start-line="146" selection-start-column="35" selection-end-line="146" selection-end-column="35" />
         </state>
       </provider>
     </entry>
