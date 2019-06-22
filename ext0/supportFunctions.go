@@ -7,9 +7,7 @@ import (
 
 /* ***********************************SuperBlock***********************************  */
 func (sb *Ext0SuperBlock) writeSuperBlock() {
-	sb.disk.SetBlockSize(BlockSize)
-	sbSlice := sb.disk.ReadBlock(0)
-
+	sbSlice := sb.disk.UnsaveRead(SuperBlockStartAddr, FatStartAddr)
 	binary.BigEndian.PutUint64(sbSlice[:8], uint64(sb.BlockNumber))
 	binary.BigEndian.PutUint64(sbSlice[8:16], uint64(sb.InodeNumber))
 	binary.BigEndian.PutUint64(sbSlice[16:24], uint64(sb.FreeBlockNumber))

@@ -44,27 +44,26 @@ type Ext0SuperBlock struct {
 func (sb *Ext0SuperBlock) GetFileSystemType() int {
 	return u.Ext0
 }
-func (sb *Ext0SuperBlock) NewSuperBlock() {
-	sb.disk.SetBlockSize(BlockSize)
+func (sb *Ext0SuperBlock) Format() {
+	d, ok := disk.NewDisk("", true, BlockSize)
+	if ok {
+		sb.disk = d
+	} else {
+		fmt.Println("error occur when format disk")
+	}
+	sb.initRootInode()
+	sb.writeSuperBlock()
+}
+
+// TODO initFromDisk
+func (sb *Ext0SuperBlock) Init(format bool) {
 	sb.FreeInodeNumber = InodeNumber
 	sb.FreeBlockNumber = DataBlockNumber
 	sb.InodeNumber = InodeNumber
 	sb.BlockNumber = DataBlockNumber
 	sb.sysType = u.Ext0
-}
-
-// TODO initFromDisk
-func (sb *Ext0SuperBlock) Init(format bool) {
 	if format {
-		d, ok := disk.NewDisk("", true, BlockSize)
-		if ok {
-			sb.disk = d
-		} else {
-			fmt.Println("error occur when format disk")
-		}
-		sb.NewSuperBlock()
-		sb.initRootInode()
-		sb.writeSuperBlock()
+		sb.Format()
 	} else {
 		d, ok := disk.NewDisk("ext0fs.bk", false, BlockSize)
 		if ok {

@@ -131,6 +131,7 @@ func main() {
 				c.Printf("%s", yellow("Input finished\n"))
 				v.Append(c.Args[0], lines)
 			}
+			c.ShowPrompt(true)
 			printMessage(promptMsg)
 		},
 	})
@@ -147,6 +148,18 @@ func main() {
 			} else {
 				v.Cat(c.Args[0])
 			}
+			printMessage(promptMsg)
+		},
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "format",
+		Help: "format the disk",
+		Completer: func([]string) []string {
+			dir, _ := v.GetFileListInCurrentDir()
+			return dir
+		},
+		Func: func(c *ishell.Context) {
+			v.ForMat()
 			printMessage(promptMsg)
 		},
 	})

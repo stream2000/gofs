@@ -15,19 +15,11 @@ type HardDisk struct {
 func (d HardDisk) ReadBlock(blockNumber int) []byte {
 	return d.storage[blockNumber*d.blockSize : (blockNumber+1)*d.blockSize]
 }
-func (d *HardDisk) SetBlockSize(size int) {
+func (d *HardDisk) setBlockSize(size int) {
 	if size%2 != 0 || size < 0 {
 		return
 	}
 	d.blockSize = size
-}
-func (d *HardDisk) SetBlock(newSlice []byte, order int) {
-	base := d.blockSize * order
-	if len(newSlice) < int(d.blockSize) {
-		for i, x := range newSlice {
-			d.storage[base+i] = x
-		}
-	}
 }
 func (d *HardDisk) UnsaveRead(begin int, end int) []byte {
 	if end > len(d.storage) {

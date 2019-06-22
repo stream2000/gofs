@@ -71,7 +71,6 @@ func (v *Vfs) getInodeByPath(path string) (Inode, bool) {
 			nInode.SetSb(sb)
 			curInode = nInode
 		} else {
-			fmt.Println("no such kind of dir in path", path, " with name ", x)
 			curInode.SetSb(v.rootSb)
 			return curInode, false
 		}
@@ -184,13 +183,20 @@ func (v *Vfs) Touch(path string) {
 		return
 	}
 	parentPath, childName := p.splitParentAndChild()
-flag:
+
 	parentInode, ok := v.getInodeByPath(parentPath)
 	if ok {
-		v.rootSb.CreateFile(childName, parentInode, 1)
+		v.rootSb.CreateFile(childName, parentInode, int(u.OrdinaryFile))
 	} else {
 		v.createParentDir(parentPath)
-		goto flag
+		parentInode, ok := v.getInodeByPath(parentPath)
+		if ok {
+			if parentInode.GetAttr().FileType != u.Directory {
+				return
+			}
+			v.rootSb.CreateFile(childName, parentInode, int(u.OrdinaryFile))
+		} else {
+		}
 	}
 
 }
@@ -214,12 +220,12 @@ func (v *Vfs) MakeDir(path string) {
 		parentInode, ok := v.getInodeByPath(parentPath)
 		if ok {
 			if parentInode.GetAttr().FileType != u.Directory {
-				fmt.Println("mkdir error: ", "path: ", parentPath, " is not a directory")
+
 				return
 			}
 			v.rootSb.CreateFile(childName, parentInode, int(u.Directory))
 		} else {
-			fmt.Println("Fatal error, no possible")
+
 		}
 	}
 }
@@ -335,4 +341,8 @@ func (v *Vfs) Cat(path string) {
 
 func (v *Vfs) SoftLink(path1 string, path2 string) {
 
+}
+func (v *Vfs)ForMat(){
+	v.rootSb.Format()
+	v.Init(v.rootSb)
 }

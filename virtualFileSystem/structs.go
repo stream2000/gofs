@@ -1,7 +1,7 @@
 package virtualFileSystem
 
 type SuperBlock interface {
-	NewSuperBlock()
+	Format()
 	ReadInode(number int) Inode            // when create an vInode,read it from disk
 	WriteInode(number int, data InodeAttr) // write back inode to disk
 	RecoverFromDisk()
