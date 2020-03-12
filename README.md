@@ -77,7 +77,7 @@ inode的函数运用的都比较频繁。
 ### CLI的实现
 cli使用go语言的一个cli交互库ishell，通过这个库，我实现了命令解析，自动补全的功能。
 
-##总结
+## 总结
 
 先说一说我的这个项目中和虚拟文件系统相关的部分。我用了大量的时间和精力将虚拟文件层和逻辑文件系统层分离，达成了vfs包完全不用考虑底层实现而运作的。但是有一点非常遗憾，就是时间的不充足，导致我没有办法继续雕琢我的文件系统。本来作为虚拟文件系统，理所当然的应该拥有挂载多文件系统的能力，以及软硬链接都应该能基本实现了，但是我只来得及达成基本功能，就草草收手了。
 
@@ -93,6 +93,8 @@ cli使用go语言的一个cli交互库ishell，通过这个库，我实现了命
 我给出的源码版本是会自动读取历史文件并写入历史文件的，所以一开始就初始化了几个一些文件和目录。
 
 操作说明：
+
+```txt
 append      append some text to the file
 cat         read file to stdin
 cd          change work directory
@@ -106,6 +108,7 @@ pwd         print work directory
 rm          delete file or dir, will delete all its children at the same time
 stat        view the information of file
 touch       create new empty file
+```
 
 基本和linux文件系统一样，只是对修改文件支持十分残缺，苦于找不到合适的命令行编辑工具，只能做了一个append向文件尾部添加一些数据。
 
